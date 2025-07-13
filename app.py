@@ -29,7 +29,50 @@ app.layout = dbc.Container([
     html.Div(id="restaurant-details")
 ], fluid=True)
 
-# Callbacks and logic will be added here
+
+# Store restaurants in a global DataFrame (for demo; use persistent storage for production)
+
+@app.callback(
+    Output("add-msg", "children"),
+    Output("restaurant-list", "children"),
+    Input("add-btn", "n_clicks"),
+    State("name-input", "value"),
+    State("category-input", "value"),
+    State("address-input", "value"),
+    prevent_initial_call=True
+)
+def add_restaurant(n_clicks, name, category, address):
+    global df
+    msg = ""
+    if not name or not category or not address:
+        msg = dbc.Alert("Please fill all fields.", color="danger")
+    else:
+        df.loc[len(df)] = {
+            "name": name,
+            "category": category,
+            "address": address,
+            "rating": None,
+            "reviews": []
+        }
+        msg = dbc.Alert(f"Added {name} successfully!", color="success")
+    # Show updated list
+    return msg, render_restaurant_list(df)
+
+def render_restaurant_list(df):
+    if df.empty:
+        return html.Div("No restaurants yet.")
+    cards = []
+    for i, row in df.iterrows():
+        cards.append(
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5(row["name"], className="card-title"),
+                    html.P(f"Category: {row['category']}"),
+                    html.P(f"Address: {row['address']}")
+                ])
+            ], className="mb-2")
+        )
+    return cards
 
 if __name__ == "__main__":
     app.run(debug=True)
